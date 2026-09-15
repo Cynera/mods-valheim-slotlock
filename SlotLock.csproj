@@ -1,0 +1,81 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>SlotLock</AssemblyName>
+    <RootNamespace>SlotLock</RootNamespace>
+    <Product>SlotLock</Product>
+    <!-- Single source of truth for the version: build.ps1 copies it into manifest.json
+         and PluginInfo.g.cs is generated from it below. -->
+    <Version>1.0.0</Version>
+    <PluginGuid>introvertedcats.slotlock</PluginGuid>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <DebugType>none</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <!-- Game assemblies are Mono/net4.x; netstandard2.1 references them fine. -->
+    <NoWarn>$(NoWarn);MSB3277;CS0649;CS0618</NoWarn>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <!-- Override on the command line if Valheim lives elsewhere:
+       dotnet build -c Release -p:ValheimDir="C:\Path\To\Valheim"  -->
+  <PropertyGroup>
+    <ValheimDir Condition="'$(ValheimDir)' == '' AND Exists('D:\SteamLibrary\steamapps\common\Valheim')">D:\SteamLibrary\steamapps\common\Valheim</ValheimDir>
+    <ValheimDir Condition="'$(ValheimDir)' == '' AND Exists('C:\Program Files (x86)\Steam\steamapps\common\Valheim')">C:\Program Files (x86)\Steam\steamapps\common\Valheim</ValheimDir>
+    <ManagedDir>$(ValheimDir)\valheim_Data\Managed</ManagedDir>
+  </PropertyGroup>
+
+  <Target Name="VerifyValheimDir" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(ManagedDir)')"
+           Text="Could not find Valheim managed assemblies at '$(ManagedDir)'. Pass -p:ValheimDir=&quot;...\common\Valheim&quot;." />
+  </Target>
+
+  <ItemGroup>
+    <Compile Include="src\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Brings in BepInEx 5 + HarmonyX reference assemblies. -->
+    <PackageReference Include="BepInEx.Core" Version="5.4.21" PrivateAssets="all" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <!-- Reference the game's own assemblies so the Unity version always matches exactly.
+       Private=false keeps them out of the build output. -->
+  <ItemGroup>
+    <Reference Include="assembly_valheim">      <HintPath>$(ManagedDir)\assembly_valheim.dll</HintPath>      <Private>false</Private></Reference>
+    <Reference Include="assembly_utils">        <HintPath>$(ManagedDir)\assembly_utils.dll</HintPath>        <Private>false</Private></Reference>
+    <Reference Include="assembly_guiutils">     <HintPath>$(ManagedDir)\assembly_guiutils.dll</HintPath>     <Private>false</Private></Reference>
+    <Reference Include="UnityEngine">           <HintPath>$(ManagedDir)\UnityEngine.dll</HintPath>           <Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UI">        <HintPath>$(ManagedDir)\UnityEngine.UI.dll</HintPath>        <Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UIModule">  <HintPath>$(ManagedDir)\UnityEngine.UIModule.dll</HintPath>  <Private>false</Private></Reference>
+    <Reference Include="UnityEngine.IMGUIModule"><HintPath>$(ManagedDir)\UnityEngine.IMGUIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.InputLegacyModule"><HintPath>$(ManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+
+  <!-- Generate PluginInfo so the [BepInPlugin] attribute can never drift from the
+       version in this file or from manifest.json. -->
+  <Target Name="GeneratePluginInfo" BeforeTargets="BeforeCompile">
+    <PropertyGroup>
+      <PluginInfoFile>$(IntermediateOutputPath)PluginInfo.g.cs</PluginInfoFile>
+    </PropertyGroup>
+    <ItemGroup>
+      <PluginInfoLines Include="namespace $(RootNamespace)" />
+      <PluginInfoLines Include="{" />
+      <PluginInfoLines Include="    internal static class PluginInfo" />
+      <PluginInfoLines Include="    {" />
+      <PluginInfoLines Include="        public const string Guid = &quot;$(PluginGuid)&quot;%3B" />
+      <PluginInfoLines Include="        public const string Name = &quot;$(AssemblyName)&quot;%3B" />
+      <PluginInfoLines Include="        public const string Version = &quot;$(Version)&quot;%3B" />
+      <PluginInfoLines Include="    }" />
+      <PluginInfoLines Include="}" />
+    </ItemGroup>
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+    <WriteLinesToFile File="$(PluginInfoFile)" Lines="@(PluginInfoLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(PluginInfoFile)" />
+    </ItemGroup>
+  </Target>
+
+</Project>
