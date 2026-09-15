@@ -59,3 +59,7 @@ Which slots you locked is saved per character, in
 <https://github.com/Cynera/mods-valheim-slotlock>
 
 Issues and pull requests welcome.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
