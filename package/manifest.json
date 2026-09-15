@@ -1,7 +1,7 @@
 {
   "name": "SlotLock",
   "version_number": "1.0.0",
-  "website_url": "",
+  "website_url": "https://github.com/Cynera/mods-valheim-slotlock",
   "description": "Lock inventory slots so Stack Items never dumps them into a chest. Compatible with ValheimPlus AutoStack.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2350"

@@ -53,3 +53,9 @@ Which slots you locked is saved per character, in
 
 - The lock frame shows in the inventory screen, not on the on-screen hotbar HUD.
 - Locks are per character, not per world.
+
+## Source
+
+<https://github.com/Cynera/mods-valheim-slotlock>
+
+Issues and pull requests welcome.
