@@ -25,11 +25,13 @@ namespace SlotLock.Patches
         }
     }
 
-    /// <summary>Draws a frame over locked slots. Runs after the grid has laid itself out.</summary>
+    /// <summary>Draws a border around locked slots. Runs after the grid has laid itself out.</summary>
     [HarmonyPatch(typeof(InventoryGrid), "UpdateGui")]
     internal static class InventoryGrid_UpdateGui_Patch
     {
         private const string OverlayName = "SlotLock_Indicator";
+
+        private static bool _loggedAttach;
 
         private static void Postfix(InventoryGrid __instance)
         {
@@ -38,43 +40,76 @@ namespace SlotLock.Patches
             if (!ReferenceEquals(__instance.GetInventory(), player.GetInventory())) return;
 
             bool show = ModConfig.ShowOverlay.Value;
+            Color color = ModConfig.OverlayColor.Value;
+            int attached = 0;
 
             foreach (InventoryElement element in __instance.GetComponentsInChildren<InventoryElement>(includeInactive: true))
             {
-                Image overlay = GetOrCreateOverlay(element);
+                GameObject overlay = GetOrCreateOverlay(element);
                 if (overlay == null) continue;
+                attached++;
 
                 bool locked = show && LockedSlots.IsLocked(element.Position);
-                if (overlay.gameObject.activeSelf != locked) overlay.gameObject.SetActive(locked);
-                if (locked) overlay.color = ModConfig.OverlayColor.Value;
+                if (overlay.activeSelf != locked) overlay.SetActive(locked);
+                if (!locked) continue;
+
+                foreach (Image edge in overlay.GetComponentsInChildren<Image>(includeInactive: true))
+                {
+                    edge.color = color;
+                }
+            }
+
+            if (!_loggedAttach && attached > 0)
+            {
+                _loggedAttach = true;
+                SlotLockPlugin.Log.LogInfo("Lock border attached to " + attached + " inventory slot(s).");
             }
         }
 
         /// <summary>
-        /// Clones the slot's own "equipped" marker rather than shipping a sprite, which
-        /// guarantees a valid sprite and the correct RectTransform anchoring for free.
+        /// Builds the border out of four stretched Images rather than reusing one of the
+        /// slot's own markers. An Image with no sprite draws a solid rectangle, so this
+        /// needs no art, can't inherit a disabled component, and leaves the item icon
+        /// fully visible instead of tinting over it.
         /// </summary>
-        private static Image GetOrCreateOverlay(InventoryElement element)
+        private static GameObject GetOrCreateOverlay(InventoryElement element)
         {
             Transform existing = element.transform.Find(OverlayName);
-            if (existing != null) return existing.GetComponent<Image>();
+            if (existing != null) return existing.gameObject;
 
-            if (element.m_equiped == null) return null;
+            var root = new GameObject(OverlayName, typeof(RectTransform));
+            var rect = (RectTransform)root.transform;
+            rect.SetParent(element.transform, worldPositionStays: false);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
 
-            GameObject go = Object.Instantiate(element.m_equiped.gameObject, element.transform);
-            go.name = OverlayName;
+            float t = ModConfig.OverlayThickness.Value;
+            AddEdge(rect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, t)); // top
+            AddEdge(rect, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, t)); // bottom
+            AddEdge(rect, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(t, 0f)); // left
+            AddEdge(rect, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(t, 0f)); // right
 
-            Image image = go.GetComponent<Image>();
-            if (image == null)
-            {
-                Object.Destroy(go);
-                return null;
-            }
+            root.transform.SetAsLastSibling();
+            root.SetActive(false);
+            return root;
+        }
 
+        private static void AddEdge(RectTransform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 size)
+        {
+            var edge = new GameObject("Edge", typeof(RectTransform), typeof(Image));
+            var rect = (RectTransform)edge.transform;
+            rect.SetParent(parent, worldPositionStays: false);
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.pivot = pivot;
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = size;
+
+            var image = edge.GetComponent<Image>();
             image.raycastTarget = false;
-            go.transform.SetAsLastSibling();
-            go.SetActive(false);
-            return image;
+            image.enabled = true;
         }
     }
 }

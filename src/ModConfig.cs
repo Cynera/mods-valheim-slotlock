@@ -11,6 +11,7 @@ namespace SlotLock
         internal static ConfigEntry<bool> ShowOverlay;
         internal static ConfigEntry<Color> OverlayColor;
         internal static ConfigEntry<bool> ProtectHotbarRow;
+        internal static ConfigEntry<float> OverlayThickness;
         internal static ConfigEntry<bool> VerboseLogging;
 
         internal static void Bind(ConfigFile cfg)
@@ -30,6 +31,11 @@ namespace SlotLock
             OverlayColor = cfg.Bind(
                 "3 - Appearance", "OverlayColor", new Color(1f, 0.78f, 0.23f, 0.85f),
                 "Colour of that frame.");
+
+            OverlayThickness = cfg.Bind(
+                "3 - Appearance", "OverlayThickness", 3f,
+                new ConfigDescription("Thickness of that frame, in pixels.",
+                    new AcceptableValueRange<float>(1f, 10f)));
 
             VerboseLogging = cfg.Bind(
                 "4 - Debug", "VerboseLogging", false,
