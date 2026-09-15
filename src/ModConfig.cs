@@ -21,7 +21,7 @@ namespace SlotLock
 
             ProtectHotbarRow = cfg.Bind(
                 "2 - Behaviour", "ProtectHotbarRow", false,
-                "Treat the whole hotbar (the bottom row of your inventory) as locked, on top of any slots you lock by hand.");
+                "Treat the whole hotbar (the top row of your inventory) as locked, on top of any slots you lock by hand.");
 
             ShowOverlay = cfg.Bind(
                 "3 - Appearance", "ShowOverlay", true,
