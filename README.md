@@ -36,7 +36,7 @@ alternative that stays out of ValheimPlus' way.
 
 ## Configuration
 
-`BepInEx/config/introvertedcats.slotlock.cfg`
+`BepInEx/config/cynera.SlotLock.cfg`
 
 | Setting | Default | What it does |
 | --- | --- | --- |
@@ -49,6 +49,14 @@ alternative that stays out of ValheimPlus' way.
 Which slots you locked is saved per character, in
 `BepInEx/config/SlotLock/<character>_<id>.txt`. Deleting that file clears your locks.
 
+### Upgrading from 1.0.0
+
+1.0.1 renamed the plugin GUID, and BepInEx names a config file after the GUID, so the
+settings file moved from `introvertedcats.slotlock.cfg` to `cynera.SlotLock.cfg`. The
+mod carries your settings across the first time it loads and removes the old file; there
+is nothing to do by hand. Your locked slots are unaffected — they were never stored under
+the GUID.
+
 ## Known limitations
 
 - The lock frame shows in the inventory screen, not on the on-screen hotbar HUD.
@@ -58,8 +66,10 @@ Which slots you locked is saved per character, in
 
 <https://github.com/Cynera/mods-valheim-slotlock>
 
+Please join the Discussions if you have questions or bugs!
+
 Issues and pull requests welcome.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT.

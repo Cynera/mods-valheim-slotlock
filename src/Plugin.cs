@@ -17,6 +17,7 @@ namespace SlotLock
         private void Awake()
         {
             Log = Logger;
+            ConfigMigration.Run(Config);
             ModConfig.Bind(Config);
 
             VerifyPatchTargets();

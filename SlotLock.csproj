@@ -8,8 +8,8 @@
     <Product>SlotLock</Product>
     <!-- Single source of truth for the version: build.ps1 copies it into manifest.json
          and PluginInfo.g.cs is generated from it below. -->
-    <Version>1.0.0</Version>
-    <PluginGuid>introvertedcats.slotlock</PluginGuid>
+    <Version>1.0.1</Version>
+    <PluginGuid>cynera.SlotLock</PluginGuid>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <DebugType>none</DebugType>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
