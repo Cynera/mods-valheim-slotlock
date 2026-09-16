@@ -12,7 +12,7 @@
 param(
     [string] $Configuration = 'Release',
     [string] $ValheimDir,
-    [string] $ProfileName = 'Introverted Cats',
+    [string] $ProfileName = 'ModTesting',
     [switch] $Deploy,
     [switch] $NoPackage
 )
@@ -55,8 +55,14 @@ if (-not $NoPackage) {
     $manifestPath = Join-Path $pkg 'manifest.json'
     $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
     if ($manifest.version_number -ne $version) {
-        $manifest.version_number = $version
-        ($manifest | ConvertTo-Json -Depth 5) | Set-Content $manifestPath -Encoding utf8
+        # Edit the text rather than round-tripping through ConvertTo-Json: that reflows the
+        # whole file, and Set-Content -Encoding utf8 writes a BOM, which Thunderstore
+        # rejects as invalid JSON.
+        $raw = [regex]::Replace(
+            (Get-Content $manifestPath -Raw),
+            '("version_number"\s*:\s*")[^"]*(")',
+            '${1}' + $version + '${2}')
+        [IO.File]::WriteAllText($manifestPath, $raw, (New-Object Text.UTF8Encoding $false))
         Write-Host "Updated manifest.json to $version" -ForegroundColor Yellow
     }
 
@@ -68,13 +74,17 @@ if (-not $NoPackage) {
     if (-not $iconOk)                                  { throw 'icon.png must be exactly 256x256.' }
     if ($manifest.name -notmatch '^[a-zA-Z0-9_]+$')    { throw 'manifest name may only contain letters, digits and underscores.' }
     if ($manifest.description.Length -gt 250)          { throw 'manifest description must be 250 characters or fewer.' }
-    if (-not (Test-Path (Join-Path $pkg 'README.md'))) { throw 'README.md is required in the package.' }
+    # The repo README is the one that ships, so the Thunderstore page can never drift
+    # from GitHub's. Nothing else in package/ is duplicated anywhere.
+    $readme = Join-Path $root 'README.md'
+    if (-not (Test-Path $readme)) { throw 'README.md is required in the package.' }
 
     $staging = Join-Path $root "obj\staging"
     if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $staging | Out-Null
 
     Copy-Item (Join-Path $pkg '*') $staging -Recurse -Force
+    Copy-Item $readme $staging -Force
     Copy-Item $dll $staging -Force
 
     $dist = Join-Path $root 'dist'
